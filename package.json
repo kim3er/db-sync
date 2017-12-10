@@ -1,0 +1,19 @@
+{
+  "name": "db-sync",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dropbox": "^2.5.12",
+    "luxon": "^0.2.7",
+    "winston": "^3.0.0-rc1"
+  },
+  "devDependencies": {
+    "eslint": "^4.13.0"
+  }
+}
