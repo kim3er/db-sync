@@ -2,7 +2,6 @@ const fs = require('fs'),
   { promisify } = require('util');
 
 const Dropbox = require('dropbox'),
-  { DateTime } = require('luxon'),
   winston = require('winston');
 
 const readFile = promisify(fs.readFile),
@@ -41,30 +40,40 @@ async function main() {
       dirStats = await stat(dirPath);
 
     if (dirStats.isDirectory()) {
-      const files = await readdir(dirPath);
-      for (let file of files) {
-        if (file.startsWith('.')) {
+      const dateDirs = await readdir(dirPath);
+      for (let dateDir of dateDirs) {
+        if (dateDir.startsWith('.')) {
           continue;
         }
 
-        const filePath = dirPath + '/' + file,
-          fileStats = await stat(filePath);
+        const dateDirPath = dirPath + '/' + dateDir,
+          dateDirStats = await stat(dateDirPath);
 
-        if (fileStats.isFile()) {
-          try {
-            const dt = DateTime.fromJSDate(fileStats.ctime);
+        if (dateDirStats.isDirectory()) {
+          const files = await readdir(dateDirPath);
+          for (let file of files) {
+            if (file.startsWith('.')) {
+              continue;
+            }
 
-            const path = '/' + dir + '/' + dt.toFormat('yyyy-MM-dd') + '/' + file,
-              contents = await readFile(filePath);
+            const filePath = dateDirPath + '/' + file,
+              fileStats = await stat(filePath);
 
-            const metaData = await dbx.filesUpload({ path, contents });
-            
-            await unlink(filePath);
+            if (fileStats.isFile()) {
+              try {
+                const path = '/' + dir + '/' + dateDir + '/' + file,
+                  contents = await readFile(filePath);
 
-            logger.info(`${path} uploaded`);
-          }
-          catch (err) {
-            logger.error(err.message);
+                const metaData = await dbx.filesUpload({ path, contents });
+
+                await unlink(filePath);
+
+                logger.info(`${path} uploaded`);
+              }
+              catch (err) {
+                logger.error(err.message);
+              }
+            }
           }
         }
       }

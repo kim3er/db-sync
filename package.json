@@ -10,7 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "dropbox": "^2.5.12",
-    "luxon": "^0.2.7",
     "winston": "^3.0.0-rc1"
   },
   "devDependencies": {
