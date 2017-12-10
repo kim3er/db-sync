@@ -1,7 +1,8 @@
 const fs = require('fs'),
   { promisify } = require('util');
 
-const Dropbox = require('dropbox'),
+const cron = require('node-cron'),
+  Dropbox = require('dropbox'),
   winston = require('winston');
 
 const readFile = promisify(fs.readFile),
@@ -28,6 +29,8 @@ const logger = winston.createLogger({
 const TARGET_DIR = process.env.TARGET_DIR || '/home/pi/Cameras';
 
 async function main() {
+  logger.info('Main process starting');
+
   const dbx = new Dropbox({ accessToken: process.env.ACCESS_TOKEN });
   
   const dirs = await readdir(TARGET_DIR);
@@ -42,7 +45,7 @@ async function main() {
     if (dirStats.isDirectory()) {
       const dateDirs = await readdir(dirPath);
       for (let dateDir of dateDirs) {
-        if (dateDir.startsWith('.')) {
+        if (dateDir.startsWith('.') || dateDir.startsWith('lastsnap')) {
           continue;
         }
 
@@ -79,6 +82,8 @@ async function main() {
       }
     }
   }
+
+  logger.info('Main process finishing');
 }
 
 process.on('unhandledRejection', (reason, p) => {
@@ -91,4 +96,9 @@ if (process.env.NODE_ENV === 'debug') {
   }));
 }
 
-main();
+main()
+  .then(function() {
+    cron.schedule('* * * * *', async function () {
+      await main();
+    });
+  });
