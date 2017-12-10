@@ -1,0 +1,16 @@
+[Unit]
+Description=Dropbox Sync Service
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+Environment=xxx
+WorkingDirectory=/home/pi/db-sync
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+RestartSec=10
+KillMode=process
+User=pi
+
+[Install]
+WantedBy=multi-user.target
