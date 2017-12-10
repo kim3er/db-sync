@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^4.0.0",
     "dropbox": "^2.5.12",
     "node-cron": "^1.2.1",
     "winston": "^3.0.0-rc1"
