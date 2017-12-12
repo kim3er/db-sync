@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "dropbox": "^2.5.12",
+    "luxon": "^0.2.7",
+    "mkdirp-promise": "^5.0.1",
     "node-cron": "^1.2.1",
     "winston": "^3.0.0-rc1"
   },
