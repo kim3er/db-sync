@@ -1,3 +1,5 @@
+import { log } from 'util';
+
 const cron = require('node-cron'),
   winston = require('winston');
 
@@ -46,3 +48,5 @@ cron.schedule(`*/${COPY_MINUTES} * * * *`, async function () {
 
   uploadingMovies = false;
 });
+
+logger.info('Script running');
