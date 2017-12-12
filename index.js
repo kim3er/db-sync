@@ -1,5 +1,3 @@
-import { log } from 'util';
-
 const cron = require('node-cron'),
   winston = require('winston');
 
