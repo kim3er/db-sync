@@ -3,8 +3,6 @@ const Dropbox = require('dropbox');
 const fs = require('../helpers/fs');
 
 module.exports = async function uploadMovies(movieDir, logger) {
-  logger.info('Main process starting');
-
   const dbx = new Dropbox({ accessToken: process.env.ACCESS_TOKEN });
 
   const dirs = await fs.readdir(movieDir);
@@ -56,6 +54,4 @@ module.exports = async function uploadMovies(movieDir, logger) {
       }
     }
   }
-
-  logger.info('Main process finishing');
 };
