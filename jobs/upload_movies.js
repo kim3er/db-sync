@@ -1,3 +1,5 @@
+const path = require('path');
+
 const Dropbox = require('dropbox');
 
 const fs = require('../helpers/fs');
@@ -25,14 +27,24 @@ module.exports = async function uploadMovies(movieDir, logger) {
           dateDirStats = await fs.stat(dateDirPath);
 
         if (dateDirStats.isDirectory()) {
+          const jpgDir = path.join(movieDir, '..', 'mpg_tmp', dir, dateDir);
+          await fs.mkdirp(jpgDir);
+
           const files = await fs.readdir(dateDirPath);
           for (let file of files) {
             if (file.startsWith('.')) {
               continue;
             }
 
-            const filePath = dateDirPath + '/' + file,
-              fileStats = await fs.stat(filePath);
+            const filePath = dateDirPath + '/' + file;
+
+            if (file.endsWith('.jpg')) {
+              await fs.copyFile(filePath, path.join(jpgDir, file));
+              await fs.unlink(filePath);
+              continue;
+            }
+
+            const fileStats = await fs.stat(filePath);
 
             if (fileStats.isFile()) {
               try {

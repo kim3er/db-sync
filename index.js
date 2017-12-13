@@ -2,6 +2,7 @@ const cron = require('node-cron'),
   winston = require('winston');
 
 const uploadMovies = require('./jobs/upload_movies'),
+  buildSummaries = require('./jobs/build_summaries'),
   copyLocal = require('./jobs/copy_local');
 
 const logger = winston.createLogger({
@@ -45,6 +46,19 @@ cron.schedule(`*/${COPY_MINUTES} * * * *`, async function () {
   await uploadMovies(TARGET_DIR, logger);
 
   uploadingMovies = false;
+});
+
+let buildingSummaries = false;
+cron.schedule('0 */6 * * *', async function() {
+  if (buildingSummaries) {
+    return;
+  }
+
+  buildingSummaries = true;
+
+  await buildSummaries(TARGET_DIR, logger);
+
+  buildSummaries = false;
 });
 
 logger.info('Script running');
