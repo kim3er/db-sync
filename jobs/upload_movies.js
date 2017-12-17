@@ -58,7 +58,12 @@ module.exports = async function uploadMovies(movieDir, logger) {
                 const path = '/' + dir + '/' + dateDir + '/' + file,
                   contents = await fs.readFile(filePath);
 
-                const metaData = await dbx.filesUpload({ path, contents });
+                try {
+                  await dbx.filesUpload({ path, contents, mode: 'overwrite' });
+                }
+                catch (err) {
+                  throw err.error ? new Error(err.error) : err;
+                }
 
                 await fs.unlink(filePath);
 
