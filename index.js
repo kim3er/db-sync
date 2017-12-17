@@ -4,7 +4,8 @@ const cron = require('node-cron'),
 
 const uploadMovies = require('./jobs/upload_movies'),
   buildSummaries = require('./jobs/build_summaries'),
-  copyLocal = require('./jobs/copy_local');
+  copyLocal = require('./jobs/copy_local'),
+  cleanupDropbox = require('./jobs/cleanup_dropbox');
 
 const logger = createLogger({
   level: 'info',
@@ -42,6 +43,7 @@ if (process.env.NODE_ENV === 'debug') {
   await copyLocal(TARGET_DIR, COPY_MINUTES, logger);
   await uploadMovies(TARGET_DIR, logger);
   await buildSummaries(TARGET_DIR, logger);
+  await cleanupDropbox(TARGET_DIR, logger);
 
   let uploadingMovies = false;
   cron.schedule(`*/${COPY_MINUTES} * * * *`, async function () {
@@ -68,5 +70,18 @@ if (process.env.NODE_ENV === 'debug') {
     await buildSummaries(TARGET_DIR, logger);
 
     buildSummaries = false;
+  });
+
+  let cleaningUpDropbox = false;
+  cron.schedule('@daily', async function () {
+    if (cleaningUpDropbox) {
+      return;
+    }
+
+    cleaningUpDropbox = true;
+
+    await cleanupDropbox(TARGET_DIR, logger);
+
+    cleaningUpDropbox = false;
   });
 })();
