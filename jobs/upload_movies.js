@@ -1,12 +1,14 @@
 const path = require('path');
 
-const Dropbox = require('dropbox');
+const Dropbox = require('dropbox'),
+  { DateTime } = require('luxon');
 
 const fs = require('../helpers/fs');
 
 module.exports = async function uploadMovies(movieDir, logger) {
   const dbx = new Dropbox({ accessToken: process.env.ACCESS_TOKEN });
 
+  const todaysDir = new DateTime.local().toFormat('yyyy-MM-dd');
   const dirs = await fs.readdir(movieDir);
   for (let dir of dirs) {
     if (dir.startsWith('.')) {
@@ -27,10 +29,15 @@ module.exports = async function uploadMovies(movieDir, logger) {
           dateDirStats = await fs.stat(dateDirPath);
 
         if (dateDirStats.isDirectory()) {
+          const files = await fs.readdir(dateDirPath);
+          if (!files.length && dateDir !== todaysDir) {
+            await fs.rmdir(dateDirPath);
+            continue;
+          }
+
           const jpgDir = path.join(movieDir, '..', 'mpg_tmp', dir, dateDir);
           await fs.mkdirp(jpgDir);
 
-          const files = await fs.readdir(dateDirPath);
           for (let file of files) {
             if (file.startsWith('.')) {
               continue;

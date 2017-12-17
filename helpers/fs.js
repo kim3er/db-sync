@@ -8,3 +8,4 @@ exports.readdir = promisify(fs.readdir);
 exports.stat = promisify(fs.stat);
 exports.unlink = promisify(fs.unlink);
 exports.mkdirp = mkdirp;
+exports.rmdir = promisify(fs.rmdir);
