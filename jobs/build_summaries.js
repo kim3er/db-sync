@@ -46,11 +46,16 @@ module.exports = async function buildSummaries(targetDir, logger) {
 
           console.log(files);
 
-          const output = targetDir + '/' + dir + '/' + dateDir + '/' + files[0].replace('.jpg', '.mp4'),
+          const output = targetDir + '/' + dir + '/' + dateDir + '/ts-' + files[0].replace('.jpg', '.mp4'),
             cmd = `ffmpeg -loglevel panic -y -framerate 10 -pattern_type glob -i '*.jpg' -c:v libx264 -pix_fmt yuv420p ${output}`;
           await execAsync(cmd, {
             cwd: dateDirPath
           });
+
+          logger.info(cmd);
+
+          await execAsync(`rm ${dateDirPath}\*.jpg`);
+          logger.info(`rm ${dateDirPath}\*.jpg`);
         }
       }
     }
