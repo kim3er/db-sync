@@ -60,7 +60,7 @@ if (process.env.NODE_ENV === 'debug') {
   });
 
   let buildingSummaries = false;
-  cron.schedule('0 */6 * * *', async function () {
+  cron.schedule('0 0,6,12,18 * * *', async function () {
     if (buildingSummaries) {
       return;
     }
