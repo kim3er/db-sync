@@ -54,8 +54,8 @@ module.exports = async function buildSummaries(targetDir, logger) {
 
           logger.info(cmd);
 
-          await execAsync(`rm ${dateDirPath}\*.jpg`);
-          logger.info(`rm ${dateDirPath}\*.jpg`);
+          await execAsync(`rm ${dateDirPath}/*.jpg`);
+          logger.info(`rm ${dateDirPath}/*.jpg`);
         }
       }
     }
