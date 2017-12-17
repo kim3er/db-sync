@@ -34,31 +34,35 @@ if (process.env.NODE_ENV === 'debug') {
   }));
 }
 
-let uploadingMovies = false;
-cron.schedule(`*/${COPY_MINUTES} * * * *`, async function () {
-  if (uploadingMovies) {
-    return;
-  }
-
-  uploadingMovies = true;
-
+(async function() {
   await copyLocal(TARGET_DIR, COPY_MINUTES, logger);
   await uploadMovies(TARGET_DIR, logger);
-
-  uploadingMovies = false;
-});
-
-let buildingSummaries = false;
-cron.schedule('0 */6 * * *', async function() {
-  if (buildingSummaries) {
-    return;
-  }
-
-  buildingSummaries = true;
-
   await buildSummaries(TARGET_DIR, logger);
 
-  buildSummaries = false;
-});
+  let uploadingMovies = false;
+  cron.schedule(`*/${COPY_MINUTES} * * * *`, async function () {
+    if (uploadingMovies) {
+      return;
+    }
 
-logger.info('Script running');
+    uploadingMovies = true;
+
+    await copyLocal(TARGET_DIR, COPY_MINUTES, logger);
+    await uploadMovies(TARGET_DIR, logger);
+
+    uploadingMovies = false;
+  });
+
+  let buildingSummaries = false;
+  cron.schedule('0 */6 * * *', async function () {
+    if (buildingSummaries) {
+      return;
+    }
+
+    buildingSummaries = true;
+
+    await buildSummaries(TARGET_DIR, logger);
+
+    buildSummaries = false;
+  });
+})();
