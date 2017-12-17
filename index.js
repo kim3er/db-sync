@@ -1,23 +1,27 @@
 const cron = require('node-cron'),
-  winston = require('winston');
+  { createLogger, format, transports } = require('winston'),
+  { combine, timestamp, label, json } = format;
 
 const uploadMovies = require('./jobs/upload_movies'),
   buildSummaries = require('./jobs/build_summaries'),
   copyLocal = require('./jobs/copy_local');
 
-const logger = winston.createLogger({
+const logger = createLogger({
   level: 'info',
-  format: winston.format.json(),
+  format: combine(
+    timestamp(),
+    json()
+  ),
   transports: [
     //
     // - Write to all logs with level `info` and below to `combined.log` 
     // - Write all logs error (and below) to `error.log`.
     //
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' })
+    new transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new transports.File({ filename: 'logs/combined.log' })
   ],
   exceptionHandlers: [
-    new winston.transports.File({ filename: 'logs/exceptions.log' })
+    new transports.File({ filename: 'logs/exceptions.log' })
   ]
 });
 
@@ -29,8 +33,8 @@ process.on('unhandledRejection', (reason, p) => {
 });
 
 if (process.env.NODE_ENV === 'debug') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.simple()
+  logger.add(new transports.Console({
+    format: format.simple()
   }));
 }
 
