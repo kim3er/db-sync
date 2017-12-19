@@ -9,8 +9,6 @@ const fs = require('../helpers/fs');
 const execAsync = promisify(exec);
 
 module.exports = async function buildSummaries(targetDir, logger) {
-  // ffmpeg -loglevel panic -y -framerate 10 -pattern_type glob -i '*.jpg' -c:v libx264 -pix_fmt yuv420p out.mp4
-
   const jpgDir = path.join(targetDir, '..', 'mpg_tmp');
   const todaysDir = new DateTime.local().toFormat('yyyy-MM-dd');
 
@@ -46,7 +44,10 @@ module.exports = async function buildSummaries(targetDir, logger) {
 
           logger.info('preparing to timelapse');
 
-          const output = targetDir + '/' + dir + '/' + dateDir + '/ts-' + files[0].replace('.jpg', '.mp4'),
+          const outputDir = targetDir + '/' + dir + '/' + dateDir;
+          await fs.mkdirp(outputDir);
+
+          const output = outputDir + '/ts-' + files[0].replace('.jpg', '.mp4'),
             cmd = `ffmpeg -loglevel panic -y -framerate 10 -pattern_type glob -i '*.jpg' -c:v libx264 -pix_fmt yuv420p ${output}`;
           await execAsync(cmd, {
             cwd: dateDirPath

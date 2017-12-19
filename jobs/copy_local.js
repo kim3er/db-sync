@@ -48,8 +48,14 @@ module.exports = async function copyLocal(targetDir, minutes, logger) {
 
       const targetPath = targetDir + CAMERA_DIR + '/' + dateName + '/';
       await fs.mkdirp(targetPath);
-      await fs.copyFile(filePath, targetPath + fileName);
-      logger.info(targetPath + fileName + ' copied.');
+
+      try {
+        await fs.copyFile(filePath, targetPath + fileName);
+        logger.info(targetPath + fileName + ' copied.');
+      }
+      catch (err) {
+        logger.error(`Couldn't copy ${fileName}. ${err.message}`);
+      }
     }
   }
 };
