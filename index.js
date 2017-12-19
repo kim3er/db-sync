@@ -53,8 +53,13 @@ if (process.env.NODE_ENV === 'debug') {
 
     uploadingMovies = true;
 
-    await copyLocal(TARGET_DIR, COPY_MINUTES, logger);
-    await uploadMovies(TARGET_DIR, logger);
+    try {
+      await copyLocal(TARGET_DIR, COPY_MINUTES, logger);
+      await uploadMovies(TARGET_DIR, logger);
+    }
+    catch(err) {
+      logger.error('Error while uploading movies: ' +  err.message);
+    }
 
     uploadingMovies = false;
   });
@@ -67,7 +72,12 @@ if (process.env.NODE_ENV === 'debug') {
 
     buildingSummaries = true;
 
-    await buildSummaries(TARGET_DIR, logger);
+    try {
+      await buildSummaries(TARGET_DIR, logger);
+    }
+    catch (err) {
+      logger.error('Error while building summaries: ' + err.message);
+    }
 
     buildSummaries = false;
   });
@@ -80,7 +90,12 @@ if (process.env.NODE_ENV === 'debug') {
 
     cleaningUpDropbox = true;
 
-    await cleanupDropbox(TARGET_DIR, logger);
+    try {
+      await cleanupDropbox(TARGET_DIR, logger);
+    }
+    catch (err) {
+      logger.error('Error while cleaning up Dropbox: ' + err.message);
+    }
 
     cleaningUpDropbox = false;
   });
