@@ -199,7 +199,7 @@ module.exports = async function uploadMovies(movieDir, logger) {
           continue;
         }
 
-        const path = '/' + dir + '/' + dateDir + '/' + file;
+        const moviePath = '/' + dir + '/' + dateDir + '/' + file;
 
         let contents;
         try {
@@ -216,13 +216,13 @@ module.exports = async function uploadMovies(movieDir, logger) {
         }
 
         try {
-          await dbx.filesUpload({ path, contents, mode: 'overwrite' });
+          await dbx.filesUpload({ moviePath, contents, mode: 'overwrite' });
         }
         catch (err) {
           logger.error(getErrorMessage(err), {
             job: jobName,
             doing: 'filesUpload',
-            what: path
+            what: moviePath
           });
 
           continue;
