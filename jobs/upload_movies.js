@@ -5,75 +5,240 @@ const Dropbox = require('dropbox'),
 
 const fs = require('../helpers/fs');
 
+const jobName = 'upload_movies';
+
+function getErrorMessage(err) {
+  if (err.message) {
+    return err.message;
+  }
+  else if (err.error) {
+    return err.error;
+  }
+  else {
+    return err;
+  }
+}
+
 module.exports = async function uploadMovies(movieDir, logger) {
   const dbx = new Dropbox({ accessToken: process.env.ACCESS_TOKEN });
 
   const todaysDir = new DateTime.local().toFormat('yyyy-MM-dd');
-  const dirs = await fs.readdir(movieDir);
+
+  let dirs;
+  try {
+    dirs = await fs.readdir(movieDir);
+  }
+  catch (err) {
+    logger.error(err.message, {
+      job: jobName,
+      doing: 'readdir',
+      what: movieDir
+    });
+
+    return;
+  }
+
   for (let dir of dirs) {
     if (dir.startsWith('.')) {
       continue;
     }
 
-    const dirPath = movieDir + '/' + dir,
-      dirStats = await fs.stat(dirPath);
+    const dirPath = movieDir + '/' + dir;
 
-    if (dirStats.isDirectory()) {
-      const dateDirs = await fs.readdir(dirPath);
-      for (let dateDir of dateDirs) {
-        if (dateDir.startsWith('.') || dateDir.startsWith('lastsnap')) {
+    let dirStats;
+    try {
+      dirStats = await fs.stat(dirPath);
+    }
+    catch (err) {
+      logger.error(err.message, {
+        job: jobName,
+        doing: 'stat',
+        what: dirPath
+      });
+
+      continue;
+    }
+
+    if (!dirStats.isDirectory()) {
+      continue;
+    }
+
+    let dateDirs;
+    try {
+      dateDirs = await fs.readdir(dirPath);
+    }
+    catch (err) {
+      logger.error(err.message, {
+        job: jobName,
+        doing: 'readdir',
+        what: dirPath
+      });
+
+      continue;
+    }
+
+    for (let dateDir of dateDirs) {
+      if (dateDir.startsWith('.') || dateDir.startsWith('lastsnap')) {
+        continue;
+      }
+
+      const dateDirPath = dirPath + '/' + dateDir;
+
+      let dateDirStats;
+      try {
+        dateDirStats = await fs.stat(dateDirPath);
+      }
+      catch (err) {
+        logger.error(err.message, {
+          job: jobName,
+          doing: 'stat',
+          what: dateDirPath
+        });
+
+        continue;
+      }
+
+      if (!dateDirStats.isDirectory()) {
+        continue;
+      }
+
+      let files;
+      try {
+        files = await fs.readdir(dateDirPath);
+      }
+      catch (err) {
+        logger.error(err.message, {
+          job: jobName,
+          doing: 'readdir',
+          what: dateDirPath
+        });
+
+        continue;
+      }
+
+      if (!files.length && dateDir !== todaysDir) {
+        try {
+          await fs.rmdir(dateDirPath);
+        }
+        catch (err) {
+          logger.error(err.message, {
+            job: jobName,
+            doing: 'rmdir',
+            what: dateDirPath
+          });
+        }
+
+        continue;
+      }
+
+      const jpgDir = path.join(movieDir, '..', 'mpg_tmp', dir, dateDir);
+
+      try {
+        await fs.mkdirp(jpgDir);
+      }
+      catch (err) {
+        logger.error(err.message, {
+          job: jobName,
+          doing: 'mkdirp',
+          what: jpgDir
+        });
+
+        continue;
+      }
+
+      for (let file of files) {
+        if (file.startsWith('.')) {
           continue;
         }
 
-        const dateDirPath = dirPath + '/' + dateDir,
-          dateDirStats = await fs.stat(dateDirPath);
+        const filePath = dateDirPath + '/' + file;
 
-        if (dateDirStats.isDirectory()) {
-          const files = await fs.readdir(dateDirPath);
-          if (!files.length && dateDir !== todaysDir) {
-            await fs.rmdir(dateDirPath);
+        if (file.endsWith('.jpg')) {
+          try {
+            await fs.copyFile(filePath, path.join(jpgDir, file));
+          }
+          catch (err) {
+            logger.error(err.message, {
+              job: jobName,
+              doing: 'copyFile',
+              what: filePath
+            });
+
             continue;
           }
 
-          const jpgDir = path.join(movieDir, '..', 'mpg_tmp', dir, dateDir);
-          await fs.mkdirp(jpgDir);
-
-          for (let file of files) {
-            if (file.startsWith('.')) {
-              continue;
-            }
-
-            const filePath = dateDirPath + '/' + file;
-
-            if (file.endsWith('.jpg')) {
-              await fs.copyFile(filePath, path.join(jpgDir, file));
-              await fs.unlink(filePath);
-              continue;
-            }
-
-            const fileStats = await fs.stat(filePath);
-
-            if (fileStats.isFile()) {
-              try {
-                const path = '/' + dir + '/' + dateDir + '/' + file,
-                  contents = await fs.readFile(filePath);
-
-                try {
-                  await dbx.filesUpload({ path, contents, mode: 'overwrite' });
-                }
-                catch (err) {
-                  throw err.error ? new Error(err.error) : err;
-                }
-
-                await fs.unlink(filePath);
-
-                logger.info(`${path} uploaded`);
-              }
-              catch (err) {
-                logger.error(err.message);
-              }
-            }
+          try {
+            await fs.unlink(filePath);
           }
+          catch (err) {
+            logger.error(err.message, {
+              job: jobName,
+              doing: 'unlink',
+              what: filePath
+            });
+          }
+
+          continue;
+        }
+
+        let fileStats;
+        try {
+          fileStats = await fs.stat(filePath);
+        }
+        catch (err) {
+          logger.error(err.message, {
+            job: jobName,
+            doing: 'stat',
+            what: filePath
+          });
+
+          continue;
+        }
+
+        if (!fileStats.isFile()) {
+          continue;
+        }
+
+        const path = '/' + dir + '/' + dateDir + '/' + file;
+
+        let contents;
+        try {
+          contents = await fs.readFile(filePath);
+        }
+        catch (err) {
+          logger.error(err.message, {
+            job: jobName,
+            doing: 'readFile',
+            what: filePath
+          });
+
+          continue;
+        }
+
+        try {
+          await dbx.filesUpload({ path, contents, mode: 'overwrite' });
+        }
+        catch (err) {
+          logger.error(getErrorMessage(err), {
+            job: jobName,
+            doing: 'filesUpload',
+            what: path
+          });
+
+          continue;
+        }
+
+        try {
+          await fs.unlink(filePath);
+        }
+        catch (err) {
+          logger.error(err.message, {
+            job: jobName,
+            doing: 'unlink',
+            what: filePath
+          });
+
+          continue;
         }
       }
     }

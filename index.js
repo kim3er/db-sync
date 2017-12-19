@@ -1,6 +1,6 @@
 const cron = require('node-cron'),
   { createLogger, format, transports } = require('winston'),
-  { combine, timestamp, label, json } = format;
+  { combine, timestamp, json, simple } = format;
 
 const uploadMovies = require('./jobs/upload_movies'),
   buildSummaries = require('./jobs/build_summaries'),
@@ -11,7 +11,7 @@ const logger = createLogger({
   level: 'info',
   format: combine(
     timestamp(),
-    json()
+    simple()
   ),
   transports: [
     //
@@ -55,17 +55,29 @@ if (process.env.NODE_ENV === 'debug') {
 
     try {
       await copyLocal(TARGET_DIR, COPY_MINUTES, logger);
-      await uploadMovies(TARGET_DIR, logger);
     }
     catch(err) {
-      logger.error('Error while uploading movies: ' +  err.message);
+      logger.error(err.message, {
+        job: 'copy_local',
+        where: 'cron'
+      });
+    }
+
+    try {
+      await uploadMovies(TARGET_DIR, logger);
+    }
+    catch (err) {
+      logger.error(err.message, {
+        job: 'upload_movies',
+        doing: 'cron'
+      });
     }
 
     uploadingMovies = false;
   });
 
   let buildingSummaries = false;
-  cron.schedule('0 0,6,12,18 * * *', async function () {
+  cron.schedule('0 6 * * *', async function () {
     if (buildingSummaries) {
       return;
     }
@@ -76,7 +88,10 @@ if (process.env.NODE_ENV === 'debug') {
       await buildSummaries(TARGET_DIR, logger);
     }
     catch (err) {
-      logger.error('Error while building summaries: ' + err.message);
+      logger.error(err.message, {
+        job: 'build_summaries',
+        doing: 'cron'
+      });
     }
 
     buildSummaries = false;
@@ -94,7 +109,10 @@ if (process.env.NODE_ENV === 'debug') {
       await cleanupDropbox(TARGET_DIR, logger);
     }
     catch (err) {
-      logger.error('Error while cleaning up Dropbox: ' + err.message);
+      logger.error(err.message, {
+        job: 'cleanup_dropbox',
+        doing: 'cron'
+      });
     }
 
     cleaningUpDropbox = false;

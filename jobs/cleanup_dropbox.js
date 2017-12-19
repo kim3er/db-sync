@@ -1,38 +1,79 @@
 const Dropbox = require('dropbox'),
   { DateTime } = require('luxon');
 
+const jobName = 'cleanup_dropbox';
+
+function getErrorMessage(err) {
+  if (err.message) {
+    return err.message;
+  }
+  else if (err.error) {
+    return err.error;
+  }
+  else {
+    return err;
+  }
+}
+
 module.exports = async function uploadMovies(targetDir, logger) {
   const dbx = new Dropbox({ accessToken: process.env.ACCESS_TOKEN });
 
   const now = new DateTime.local();
 
-  const cameras = (await dbx.filesListFolder({
-    path: ''
-  })).entries;
+  let cameraResponse;
+  try {
+    cameraResponse = await dbx.filesListFolder({
+      path: ''
+    });
+  }
+  catch (err) {
+    logger.error(getErrorMessage(err), {
+      job: jobName,
+      doing: 'filesListFolder',
+      what: 'root'
+    });
 
-  for (let camera of cameras) {
+    return;
+  }
+
+  for (let camera of cameraResponse.entries) {
     if (camera['.tag'] !== 'folder') {
       continue;
     }
 
-    const dates = (await dbx.filesListFolder({
-      path: camera.path_lower
-    })).entries;
+    let dateResponse;
+    try {
+      dateResponse = await dbx.filesListFolder({
+        path: camera.path_lower
+      });
+    }
+    catch (err) {
+      logger.error(getErrorMessage(err), {
+        job: jobName,
+        doing: 'filesListFolder',
+        what: camera.path_lower
+      });
 
-    for (let date of dates) {
+      continue;
+    }
+
+    for (let date of dateResponse.entries) {
       const folderDate = DateTime.fromString(date.name, 'yyyy-MM-dd'),
         dateDiff = Math.round(now.diff(folderDate, 'days').days);
+        
       if (dateDiff <= 14) {
         continue;
       }
 
       try {
         await dbx.filesDelete({ path: date.path_lower });
-        logger.info(date.path_display + ' deleted.');
       }
       catch (err) {
-        logger.error(err.error ? err.error : err.message);
-        continue;
+        logger.error(getErrorMessage(err), {
+          job: jobName,
+          doing: 'filesDelete',
+          what: date.path_lower
+        });
       }
     }
   }

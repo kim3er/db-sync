@@ -8,6 +8,8 @@ const fs = require('../helpers/fs');
 
 const execAsync = promisify(exec);
 
+const jobName = 'build_summaries';
+
 module.exports = async function buildSummaries(targetDir, logger) {
   const jpgDir = path.join(targetDir, '..', 'mpg_tmp');
   const todaysDir = new DateTime.local().toFormat('yyyy-MM-dd');
@@ -28,13 +30,36 @@ module.exports = async function buildSummaries(targetDir, logger) {
           continue;
         }
 
-        const dateDirPath = dirPath + '/' + dateDir,
+        const dateDirPath = dirPath + '/' + dateDir;
+
+        let dateDirStats;
+        try {
           dateDirStats = await fs.stat(dateDirPath);
+        }
+        catch (err) {
+          logger.error(err.message, {
+            job: jobName,
+            doing: 'stat',
+            what: dateDirPath
+          });
+
+          continue;
+        }
 
         if (dateDirStats.isDirectory()) {
           const files = await fs.readdir(dateDirPath);
           if (!files.length && dateDir !== todaysDir) {
-            await fs.rmdir(dateDirPath);
+            try {
+              await fs.rmdir(dateDirPath);
+            }
+            catch (err) {
+              logger.error(err.message, {
+                job: jobName,
+                doing: 'rmdir',
+                what: dateDirPath
+              });
+            }
+
             continue;
           }
 
@@ -42,21 +67,49 @@ module.exports = async function buildSummaries(targetDir, logger) {
             continue;
           }
 
-          logger.info('preparing to timelapse');
-
           const outputDir = targetDir + '/' + dir + '/' + dateDir;
-          await fs.mkdirp(outputDir);
+
+          try {
+            await fs.mkdirp(outputDir);
+          }
+          catch (err) {
+            logger.error(err.message, {
+              job: jobName,
+              doing: 'mkdirp',
+              what: outputDir
+            });
+
+            continue;
+          }
 
           const output = outputDir + '/ts-' + files[0].replace('.jpg', '.mp4'),
             cmd = `ffmpeg -loglevel panic -y -framerate 10 -pattern_type glob -i '*.jpg' -c:v libx264 -pix_fmt yuv420p ${output}`;
-          await execAsync(cmd, {
-            cwd: dateDirPath
-          });
+          
+          try {
+            await execAsync(cmd, {
+              cwd: dateDirPath
+            });
+          }
+          catch (err) {
+            logger.error(err.message, {
+              job: jobName,
+              doing: 'ffmpeg',
+              what: output
+            });
 
-          logger.info(cmd);
+            continue;
+          }
 
-          await execAsync(`rm ${dateDirPath}/*.jpg`);
-          logger.info(`rm ${dateDirPath}/*.jpg`);
+          try {
+            await execAsync(`rm ${dateDirPath}/*.jpg`);
+          }
+          catch (err) {
+            logger.error(err.message, {
+              job: jobName,
+              doing: 'rm jpg',
+              what: dateDirPath
+            });
+          }
         }
       }
     }
