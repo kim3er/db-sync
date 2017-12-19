@@ -216,7 +216,7 @@ module.exports = async function uploadMovies(movieDir, logger) {
         }
 
         try {
-          await dbx.filesUpload({ moviePath, contents, mode: 'overwrite' });
+          await dbx.filesUpload({ path: moviePath, contents, mode: 'overwrite' });
         }
         catch (err) {
           logger.error(getErrorMessage(err), {
