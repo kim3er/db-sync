@@ -77,7 +77,7 @@ if (process.env.NODE_ENV === 'debug') {
   });
 
   let buildingSummaries = false;
-  cron.schedule('0 6 * * *', async function () {
+  cron.schedule('0 0/6 * * *', async function () {
     if (buildingSummaries) {
       return;
     }
@@ -98,7 +98,7 @@ if (process.env.NODE_ENV === 'debug') {
   });
 
   let cleaningUpDropbox = false;
-  cron.schedule('@daily', async function () {
+  cron.schedule('0 0 * * *', async function () {
     if (cleaningUpDropbox) {
       return;
     }
