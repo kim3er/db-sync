@@ -8,6 +8,8 @@ const SRC_DIR = process.env.SRC_DIR || '/var/lib/motioneye/WorkRoom',
 const jobName = 'copy_local';
 
 module.exports = async function copyLocal(targetDir, minutes, logger) {
+  let filesCopied = 0;
+
   const now = DateTime.local();
 
   let dates;
@@ -125,7 +127,13 @@ module.exports = async function copyLocal(targetDir, minutes, logger) {
           doing: 'copyFile',
           what: filePath
         });
+
+        continue;
       }
+
+      filesCopied++;
     }
   }
+
+  logger.info(`${filesCopied} ${filesCopied === 1 ? 'file' : 'files'} copied.`);
 };

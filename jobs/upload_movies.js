@@ -20,6 +20,9 @@ function getErrorMessage(err) {
 }
 
 module.exports = async function uploadMovies(movieDir, logger) {
+  let moviesUploaded = 0,
+    imagesCopied = 0;
+
   const dbx = new Dropbox({ accessToken: process.env.ACCESS_TOKEN });
 
   const todaysDir = new DateTime.local().toFormat('yyyy-MM-dd');
@@ -156,6 +159,7 @@ module.exports = async function uploadMovies(movieDir, logger) {
         if (file.endsWith('.jpg')) {
           try {
             await fs.copyFile(filePath, path.join(jpgDir, file));
+            imagesCopied++;
           }
           catch (err) {
             logger.error(err.message, {
@@ -240,7 +244,11 @@ module.exports = async function uploadMovies(movieDir, logger) {
 
           continue;
         }
+
+        moviesUploaded++;
       }
     }
   }
+
+  logger.info(`${moviesUploaded} ${moviesUploaded === 1 ? 'movie' : 'movies'} uploaded. ${imagesCopied} ${imagesCopied === 1 ? 'image' : 'images'} copied.`);
 };

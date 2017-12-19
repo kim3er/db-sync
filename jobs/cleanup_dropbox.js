@@ -15,7 +15,9 @@ function getErrorMessage(err) {
   }
 }
 
-module.exports = async function uploadMovies(targetDir, logger) {
+module.exports = async function cleanDropbox(targetDir, logger) {
+  let foldersRemoved = 0;
+
   const dbx = new Dropbox({ accessToken: process.env.ACCESS_TOKEN });
 
   const now = new DateTime.local();
@@ -74,7 +76,13 @@ module.exports = async function uploadMovies(targetDir, logger) {
           doing: 'filesDelete',
           what: date.path_lower
         });
+
+        continue;
       }
+
+      foldersRemoved++;
     }
   }
+
+  logger.info(`${foldersRemoved} ${foldersRemoved === 1 ? 'folder' : 'folders'} removed.`);
 };
