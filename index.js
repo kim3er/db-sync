@@ -30,7 +30,10 @@ const TARGET_DIR = process.env.TARGET_DIR || '/home/pi/Cameras',
   COPY_MINUTES = 5;
 
 process.on('unhandledRejection', (reason, p) => {
-  logger.error(reason);
+  logger.error(reason, {
+    when: 'unhandledRejection',
+    what: p
+  });
 });
 
 if (process.env.NODE_ENV === 'debug') {
