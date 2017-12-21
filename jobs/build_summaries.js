@@ -175,7 +175,7 @@ module.exports = async function buildSummaries(targetDir, logger) {
         logger.error(getErrorMessage(err), {
           job: jobName,
           doing: 'filesUpload',
-          what: moviePath
+          what: dbPath
         });
 
         continue;
