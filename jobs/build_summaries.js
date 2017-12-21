@@ -123,7 +123,7 @@ module.exports = async function buildSummaries(targetDir, logger) {
         continue;
       }
 
-      const dbPath = dir + '/' + dateDir + '/' + output,
+      const dbPath = '/' + dir + '/' + dateDir + '/' + output,
         localPath = dateDirPath + '/' + output;
 
       let fileStats;
