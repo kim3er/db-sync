@@ -80,7 +80,7 @@ if (process.env.NODE_ENV === 'debug') {
   });
 
   let buildingSummaries = false;
-  cron.schedule('0 0/6 * * *', async function () {
+  cron.schedule('0 */3 * * *', async function () {
     if (buildingSummaries) {
       return;
     }
@@ -97,7 +97,7 @@ if (process.env.NODE_ENV === 'debug') {
       });
     }
 
-    buildSummaries = false;
+    buildingSummaries = false;
   });
 
   let cleaningUpDropbox = false;

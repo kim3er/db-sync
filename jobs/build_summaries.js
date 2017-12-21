@@ -2,7 +2,8 @@ const { exec } = require('child_process'),
   path = require('path'),
   { promisify } = require('util');
 
-const { DateTime } = require('luxon');
+const Dropbox = require('dropbox'),
+  { DateTime } = require('luxon');
 
 const fs = require('../helpers/fs');
 
@@ -12,6 +13,8 @@ const jobName = 'build_summaries';
 
 module.exports = async function buildSummaries(targetDir, logger) {
   let summaryCount = 0;
+
+  const dbx = new Dropbox({ accessToken: process.env.ACCESS_TOKEN });
 
   const jpgDir = path.join(targetDir, '..', 'mpg_tmp');
   const todaysDir = new DateTime.local().toFormat('yyyy-MM-dd');
@@ -90,7 +93,7 @@ module.exports = async function buildSummaries(targetDir, logger) {
         continue;
       }
 
-      const output = outputDir + '/ts-' + files[0].replace('.jpg', '.mp4'),
+      const output = 'ts-' + files[0].replace('.jpg', '.mp4'),
         cmd = `ffmpeg -loglevel panic -y -framerate 10 -pattern_type glob -i '*.jpg' -c:v libx264 -pix_fmt yuv420p ${output}`;
 
       try {
@@ -108,8 +111,66 @@ module.exports = async function buildSummaries(targetDir, logger) {
         continue;
       }
 
+      const dbPath = dir + '/' + dateDir + '/' + output,
+        localPath = dateDirPath + '/' + output;
+
+      let fileStats;
       try {
-        await execAsync(`rm ${dateDirPath}/*.jpg`);
+        fileStats = await fs.stat(localPath);
+      }
+      catch (err) {
+        logger.error(err.message, {
+          job: jobName,
+          doing: 'stat',
+          what: localPath
+        });
+
+        continue;
+      }
+
+      if (fileStats.size === 0) {
+        logger.error('File size is zero', {
+          job: jobName,
+          doing: 'size',
+          what: localPath
+        });
+
+        continue;
+      }
+
+      let contents;
+      try {
+        contents = await fs.readFile(localPath);
+      }
+      catch (err) {
+        logger.error(err.message, {
+          job: jobName,
+          doing: 'readFile',
+          what: localPath
+        });
+
+        continue;
+      }
+
+      try {
+        await dbx.filesUpload({
+          path: dbPath,
+          contents,
+          mode: 'overwrite'
+        });
+      }
+      catch (err) {
+        logger.error(getErrorMessage(err), {
+          job: jobName,
+          doing: 'filesUpload',
+          what: moviePath
+        });
+
+        continue;
+      }
+
+      try {
+        await execAsync(`rm ${dateDirPath}/*`);
       }
       catch (err) {
         logger.error(err.message, {
