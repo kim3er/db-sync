@@ -11,6 +11,18 @@ const execAsync = promisify(exec);
 
 const jobName = 'build_summaries';
 
+function getErrorMessage(err) {
+  if (err.message) {
+    return err.message;
+  }
+  else if (err.error) {
+    return err.error;
+  }
+  else {
+    return err;
+  }
+}
+
 module.exports = async function buildSummaries(targetDir, logger) {
   let summaryCount = 0;
 
